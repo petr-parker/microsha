@@ -99,14 +99,46 @@ void meta(vector<string> commands) {
 }
 
 void meta_io(vector<string> commands) {
+	int i_in = -1;
+	int i_out = -1;
 	for (int i = 1; i < commands.size(); i++) {
 		if (commands[i] == "<") {
-			
+			if (i != -1) {
+				perror("Too many <");
+				return;
+			}
+			i_in = i;
 		}
 		if (commands[i] == ">") {
-
+			if (i != -1) {
+    			perror("Too many >");
+				return;
+			}
+			i_out = i;
 		}
 	}
+	int in = 0;
+	int out = 1;
+	if (i_in != -1) {
+		// in = open("foo", O_RDWR | O_CREAT | O_EXCL, 0666);
+	}
+	if (i_out != 1) {
+		// out = open("foo", O_RDWR | O_CREAT | O_EXCL, 0666);
+	}
+
+	int fd[2];
+	int status;
+	pid_t waitd;
+
+    pipe(fd);
+    pid_t pid = fork();
+    if (pid == 0) {
+		close(fd[0]);
+		dup2(fd[1], in);
+
+	}
+	waitd = wait(&status);
+	close(fd[1]); // закрыть вывод в предыдущий pipe
 }
 
 void call(vector<string> commands) {
@@ -142,7 +174,6 @@ void conveer_call(vector<string> commands) {
 }
 
 int conveer(vector<vector<string> > &commands) {
-	vector<vector<char *> > c_commands = vv_c_str(commands);
 	int fd[2][2];
 	bool current = false;
 	int status;
@@ -162,7 +193,7 @@ int conveer(vector<vector<string> > &commands) {
 		if (pid == 0) {
 			dup2(fd[current][0], 0); // ввод из предыдущего
 			dup2(fd[!current][1], 1); // вывод в следующий
-		    execvp(c_commands[i][0], &c_commands[i][0]);
+		    conveer_call(commands[i]);
 		}
 		close(fd[current][0]); // закрыть ввод из предыдущего pipe
 		current = !current;
@@ -171,9 +202,9 @@ int conveer(vector<vector<string> > &commands) {
 	close(fd[current][1]); // закрыть вывод в предыдущий pipe
 	pid = fork();
 	if (pid == 0) {
-		int len = c_commands.size();
+		int len = commands.size();
     	dup2(fd[current][0], 0); // ввод из предыдущего, вывод стандартный
-		execvp(c_commands[len - 1][0], &c_commands[len - 1][0]); 
+		conveer_call(commands[len - 1]); 
 	}
 	waitd = wait(&status);
 	close(fd[current][0]); // закрыть ввод из предыдущего pipe
