@@ -98,11 +98,22 @@ void meta(vector<string> commands) {
 	}	
 }
 
+void meta_io(vector<string> commands) {
+	for (int i = 1; i < commands.size(); i++) {
+		if (commands[i] == "<") {
+			
+		}
+		if (commands[i] == ">") {
+
+		}
+	}
+}
+
 void call(vector<string> commands) {
 	if (v_is_meta(commands)) {
 	 	meta(commands);
 	} else if (v_is_meta_io(commands)) {
-		
+		meta_io(commands);
 	} else {
 	    pid_t pid = fork();
 	    if (pid == 0) {
@@ -125,6 +136,11 @@ void single(vector<string> commands) {
 	}
 }
 
+void conveer_call(vector<string> commands) {
+	call(commands);
+	exit(0);
+}
+
 int conveer(vector<vector<string> > &commands) {
 	vector<vector<char *> > c_commands = vv_c_str(commands);
 	int fd[2][2];
@@ -136,7 +152,7 @@ int conveer(vector<vector<string> > &commands) {
 	pid_t pid = fork();
 	if (pid == 0) {
 		dup2(fd[current][1], 1);
-		execvp(c_commands[0][0], &c_commands[0][0]); // вызов первой функии, ввод стандартный, вывод в pipe
+		conveer_call(commands[0]);
 	}
 	for (int i = 1; i < commands.size() - 1; i++) {
 		waitd = wait(&status);
