@@ -8,6 +8,8 @@
 #include <iostream>
 #include <string.h>
 #include <sys/wait.h>
+#include <fcntl.h>
+#include <time.h>
 
 using namespace std;
 
@@ -75,6 +77,8 @@ void meta(vector<string> commands) {
 		const char * base = ".";
 		all = walk(base);
 	}
+	sort(all.begin(), all.end());
+
 	vector<string> v_meta;
 	vector<string> v;
 	string replace;
@@ -101,16 +105,16 @@ void meta(vector<string> commands) {
 void meta_io(vector<string> commands) {
 	int i_in = -1;
 	int i_out = -1;
-	for (int i = 1; i < commands.size(); i++) {
+	for (int i = 0; i < commands.size(); i++) {
 		if (commands[i] == "<") {
-			if (i != -1) {
+			if (i_in != -1) {
 				perror("Too many <");
 				return;
 			}
 			i_in = i;
 		}
 		if (commands[i] == ">") {
-			if (i != -1) {
+			if (i_out != -1) {
     			perror("Too many >");
 				return;
 			}
@@ -119,26 +123,30 @@ void meta_io(vector<string> commands) {
 	}
 	int in = 0;
 	int out = 1;
-	if (i_in != -1) {
-		// in = open("foo", O_RDWR | O_CREAT | O_EXCL, 0666);
+	if (i_in != -1 && commands.size() >= i_in) {
+		in = open(commands[i_in + 1].c_str(), O_RDWR | O_CREAT, 0666);
 	}
-	if (i_out != 1) {
-		// out = open("foo", O_RDWR | O_CREAT | O_EXCL, 0666);
+	if (i_out != -1 && commands.size() >= i_out) {
+		out = open(commands[i_out + 1].c_str(), O_RDWR | O_CREAT, 0666);
 	}
-
-	int fd[2];
-	int status;
-	pid_t waitd;
-
-    pipe(fd);
-    pid_t pid = fork();
+	if (in != 0) {
+		vector<string>::iterator it_in = find(commands.begin(), commands.end(), "<");
+		commands.erase(it_in, it_in + 2);
+	}
+	if (out != 1) {
+		vector<string>::iterator it_out = find(commands.begin(), commands.end(), ">");
+		commands.erase(it_out, it_out + 2);
+	}
+	pid_t pid = fork();
     if (pid == 0) {
-		close(fd[0]);
-		dup2(fd[1], in);
-
+		dup2(in, 0);
+		dup2(out, 1);
+		
+		vector<char *> c_commands = v_c_str(commands);
+		execvp(c_commands[0], &c_commands[0]);
 	}
-	waitd = wait(&status);
-	close(fd[1]); // закрыть вывод в предыдущий pipe
+	int status;
+	pid_t waitd = wait(&status);
 }
 
 void call(vector<string> commands) {
@@ -159,12 +167,21 @@ void call(vector<string> commands) {
 }
 
 void single(vector<string> commands) {
-	if (commands[0] == "cd") {
-    	change_dir(commands);
-	} else if (commands[0] == "pwd") {
-		pwd(commands);
-	} else {
-		call(commands);
+	bool time_print = false;
+	time_t begin, end;
+	if (commands[0] == "time") {
+		commands.erase(commands.begin());
+		time_print = true;
+		begin = time(NULL);
+	}
+
+	if (commands[0] == "cd") 		{ change_dir(commands); }
+	else if (commands[0] == "pwd") 	{ pwd(commands); }
+	else 							{ call(commands); }
+
+	if (time_print) {
+		end = time(NULL);
+		printf("%lf\n", difftime(begin, end));
 	}
 }
 
@@ -212,26 +229,6 @@ int conveer(vector<vector<string> > &commands) {
 }
 
 int main() {
-	/*
-	string a;
-	vector<string> v;
-	for (int i = 0; i < 5; i++) {
-		cin >> a;
-		v.push_back(a);
-
-	}
-	cout << join(v, "==") << endl;
-
-	vector<string> v_m;
-	for (int i = 0; i < 5; i++) {
-	    cin >> a;
-	    v_m.push_back(a);
-	}
-	cout << join(v_m, "==") << endl;
-
-	cout << v_metacmp(v, v_m) << endl;
-	*/
-	
 	vector<string> in;
 	vector<vector<string> > com;
 	do {
