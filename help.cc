@@ -149,3 +149,25 @@ int v_is_meta_io(vector<string> v) {
 	return 0;
 }
 
+void walk_recursive(string const &dirname, vector<string> &ret) {
+    DIR *dir = opendir(dirname.c_str());
+    if (dir == nullptr) {
+        perror(dirname.c_str());
+        return;
+    }
+    for (dirent *de = readdir(dir); de != NULL; de = readdir(dir)) {
+        if (strcmp(".", de->d_name) == 0 || strcmp("..", de->d_name) == 0) continue; // не берём . и ..
+        ret.push_back(dirname + "/" + de->d_name); // добавление в вектор
+        if (de->d_type == DT_DIR) {
+            walk_recursive(dirname + "/" + de->d_name, ret);
+        }
+    }
+    closedir(dir);
+}
+
+vector<string> walk(string const &dirname) {
+    vector<string> ret;
+    walk_recursive(dirname, ret);
+    return ret;
+}
+

@@ -15,51 +15,6 @@ using namespace std;
 
 #include "help.cc"
 
-void walk_recursive(string const &dirname, vector<string> &ret) {
-    DIR *dir = opendir(dirname.c_str());
-    if (dir == nullptr) {
-        perror(dirname.c_str());
-        return;
-    }
-    for (dirent *de = readdir(dir); de != NULL; de = readdir(dir)) {
-        if (strcmp(".", de->d_name) == 0 || strcmp("..", de->d_name) == 0) continue; // не берём . и ..
-        ret.push_back(dirname + "/" + de->d_name); // добавление в вектор
-        if (de->d_type == DT_DIR) {
-            walk_recursive(dirname + "/" + de->d_name, ret);
-        }
-    }
-    closedir(dir);
-}
-
-vector<string> walk(string const &dirname) {
-    vector<string> ret;
-    walk_recursive(dirname, ret);
-    return ret;
-}
-
-void change_dir(vector<string> commands) {
-	if (commands.size() == 1) {
-		string user_name = string(getenv("USER"));
-		string cpp_path = "/Users/" + user_name;
-		char * path = (char *) cpp_path.c_str();
-		if (chdir(path) == -1) {
-			perror("chdir");
-		}
-	} else {
-		char * path = (char *) commands[1].c_str();
-		if (chdir(path) == -1) {
-		    perror("chdir");
-		}
-	} 
-}
-
-void pwd(vector<string> commands) {
-	char path[100] = {0};
-	getcwd(path, 100);
-	int len = write(1, path, sizeof(path));
-	write(1, "\n", sizeof("\n"));;
-}
-
 void meta(vector<string> commands) {
 	int i_meta;
 	for (int i = 0; i < commands.size(); i++) {
@@ -166,23 +121,47 @@ void call(vector<string> commands) {
 	}
 }
 
-void single(vector<string> commands) {
-	bool time_print = false;
-	time_t begin, end;
-	if (commands[0] == "time") {
-		commands.erase(commands.begin());
-		time_print = true;
-		begin = time(NULL);
-	}
+void my_time(vector<string> commands) {
+    commands.erase(commands.begin()); // удалить time
 
+    time_t begin, end;
+
+    begin = time(&begin);
+
+    call(commands);
+
+    time(&end);
+    printf("%lf\n", difftime(end, begin));
+}
+
+void change_dir(vector<string> commands) {
+    if (commands.size() == 1) {
+        string user_name = string(getenv("USER"));
+        string cpp_path = "/Users/" + user_name;
+        char * path = (char *) cpp_path.c_str();
+        if (chdir(path) == -1) {
+            perror("chdir");
+        }
+    } else {
+        char * path = (char *) commands[1].c_str();
+        if (chdir(path) == -1) {
+            perror("chdir");
+        }
+    }
+}
+
+void pwd(vector<string> commands) {
+    char path[100] = {0};
+    getcwd(path, 100);
+    int len = write(1, path, sizeof(path));
+    write(1, "\n", sizeof("\n"));;
+}
+
+void single(vector<string> commands) {
+	if (commands[0] == "time") 		{ my_time(commands); }
 	if (commands[0] == "cd") 		{ change_dir(commands); }
 	else if (commands[0] == "pwd") 	{ pwd(commands); }
 	else 							{ call(commands); }
-
-	if (time_print) {
-		end = time(NULL);
-		printf("%lf\n", difftime(begin, end));
-	}
 }
 
 void conveer_call(vector<string> commands) {
