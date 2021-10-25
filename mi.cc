@@ -10,6 +10,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <time.h>
+#include <algorithm>
 
 using namespace std;
 
@@ -40,8 +41,8 @@ void meta(vector<string> commands) {
 	for (int i = 0; i < all.size(); i++) {
 		v_meta = split(commands[i_meta], '/');
 		v = split(all[i], '/');
-		if  (v[0] == ".") v.erase(v.begin(), v.begin() + 1);
-		if  (v_meta[0] == ".") v_meta.erase(v_meta.begin(), v_meta.begin() + 1);
+		if  (v[0] == ".") v.erase(v.begin());
+		if  (v_meta[0] == ".") v_meta.erase(v_meta.begin());
 		if (v_metacmp(v, v_meta)) {
 			replace = join(v, "/");
 			comm[i_meta] = replace; 
@@ -63,14 +64,14 @@ void meta_io(vector<string> commands) {
 	for (int i = 0; i < commands.size(); i++) {
 		if (commands[i] == "<") {
 			if (i_in != -1) {
-				perror("Too many <");
+				printf("Too many <\n");
 				return;
 			}
 			i_in = i;
 		}
 		if (commands[i] == ">") {
 			if (i_out != -1) {
-    			perror("Too many >");
+    			printf("Too many >\n");
 				return;
 			}
 			i_out = i;
@@ -99,6 +100,8 @@ void meta_io(vector<string> commands) {
 		
 		vector<char *> c_commands = v_c_str(commands);
 		execvp(c_commands[0], &c_commands[0]);
+		perror(sys_errlist[errno]);
+		exit(errno);
 	}
 	int status;
 	pid_t waitd = wait(&status);
@@ -219,6 +222,5 @@ int main() {
 			conveer(com);
 		}
 	} while (in.size() > 0);
-	
 }
 
