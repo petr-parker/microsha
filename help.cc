@@ -3,14 +3,14 @@ vector<string> split(string line, char splitter) {
 	vector<string> ret;
 	string s;
 	while (i < line.size()) {
-    	while (i < line.size() && line[i] != splitter) {
-        	s = s + line[i];
+		while (i < line.size() && line[i] != splitter) {
+			s = s + line[i];
 			i++;
 		}
-    	if (s != "") {
+		if (s != "") {
 			ret.push_back(s);
-        	s = "";
-    	}
+			s = "";
+		}
 		i++;
 	}
 	return ret;
@@ -55,19 +55,19 @@ vector<string> input() {
 }
 
 vector<vector<string> > split_in(vector<string> in) {
-    vector<vector<string> > res;
-    vector<string> v;
-    int i = 0;
-    while (i < in.size()) {
-        while (i < in.size() && in[i] != "|") {
-            v.push_back(in[i]);
-            i++;
-        }
-        res.push_back(v);
-        v.clear();
-        i++;
-    }
-    return res;
+	vector<vector<string> > res;
+	vector<string> v;
+	int i = 0;
+	while (i < in.size()) {
+		while (i < in.size() && in[i] != "|") {
+			v.push_back(in[i]);
+			i++;
+		}
+		res.push_back(v);
+		v.clear();
+		i++;
+	}
+	return res;
 }
 
 int metacmp(string line, string metaline) {
@@ -89,7 +89,7 @@ int metacmp(string line, string metaline) {
 		return (metacmp(line.substr(1), metaline.substr(1)));
 	} else {
 		return 0;
-	}		
+	}
 }
 
 int v_metacmp(vector<string> v, vector<string> v_meta) {
@@ -103,21 +103,21 @@ int v_metacmp(vector<string> v, vector<string> v_meta) {
 }
 
 vector<vector<char *> > vv_c_str(vector<vector<string> > &vv) {
-    vector<vector<char *> > ret(vv.size());
-    for (int i = 0; i < vv.size(); i++) {
-        for (int j = 0; j < vv[i].size(); j++) {
-            ret[i].push_back((char *)(vv[i][j].c_str()));
-        }
-        ret[i].push_back(nullptr);
-    }
-    return ret;
+	vector<vector<char *> > ret(vv.size());
+	for (int i = 0; i < vv.size(); i++) {
+		for (int j = 0; j < vv[i].size(); j++) {
+			ret[i].push_back((char *)(vv[i][j].c_str()));
+		}
+		ret[i].push_back(nullptr);
+	}
+	return ret;
 }
 
 vector<char *> v_c_str(vector<string> &v) {
 	vector<char *> ret;
 	for (int i = 0; i < v.size(); i++) {
 		ret.push_back((char *)(v[i].c_str())); 
-    }
+	}
 	ret.push_back(nullptr);
 	return ret;
 }
@@ -132,42 +132,42 @@ int is_meta(string line) {
 }
 
 int v_is_meta(vector<string> v) {
-    for (int i = 0; i < v.size(); i++) {
-        if (is_meta(v[i])) {
-            return 1;
-        }
-    }
-    return 0;
+	for (int i = 0; i < v.size(); i++) {
+		if (is_meta(v[i])) {
+			return 1;
+		}
+	}
+	return 0;
 }
 
 int v_is_meta_io(vector<string> v) {
 	for (int i = 0; i < v.size(); i++) {
-	    if (v[i] == ">" || v[i] == "<") {
-	        return 1;
-	    }
+		if (v[i] == ">" || v[i] == "<") {
+			return 1;
+		}
 	}
 	return 0;
 }
 
 void walk_recursive(string const &dirname, vector<string> &ret) {
-    DIR *dir = opendir(dirname.c_str());
-    if (dir == nullptr) {
-        perror(dirname.c_str());
-        return;
-    }
-    for (dirent *de = readdir(dir); de != NULL; de = readdir(dir)) {
-        if (strcmp(".", de->d_name) == 0 || strcmp("..", de->d_name) == 0) continue; // не берём . и ..
-        ret.push_back(dirname + "/" + de->d_name); // добавление в вектор
-        if (de->d_type == DT_DIR) {
-            walk_recursive(dirname + "/" + de->d_name, ret);
-        }
-    }
-    closedir(dir);
+	DIR *dir = opendir(dirname.c_str());
+	if (dir == nullptr) {
+		perror(dirname.c_str());
+		return;
+	}
+	for (dirent *de = readdir(dir); de != NULL; de = readdir(dir)) {
+		if (strcmp(".", de->d_name) == 0 || strcmp("..", de->d_name) == 0) continue; // не берём . и ..
+		ret.push_back(dirname + "/" + de->d_name); // добавление в вектор
+		if (de->d_type == DT_DIR) {
+			walk_recursive(dirname + "/" + de->d_name, ret);
+		}
+	}
+	closedir(dir);
 }
 
 vector<string> walk(string const &dirname) {
-    vector<string> ret;
-    walk_recursive(dirname, ret);
-    return ret;
+	vector<string> ret;
+	walk_recursive(dirname, ret);
+	return ret;
 }
 

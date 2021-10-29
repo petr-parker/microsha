@@ -9,8 +9,10 @@
 #include <string.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-#include <time.h>
+#include <sys/time.h>
 #include <algorithm>
+#include <signal.h>
+#include <sys/times.h>
 
 using namespace std;
 
@@ -48,12 +50,13 @@ void meta(vector<string> commands) {
 			comm[i_meta] = replace; 
 			pid_t pid = fork();
 			if (pid == 0) {
-			    vector<char *> c_comm = v_c_str(comm);
-			    execvp(c_comm[0], &c_comm[0]);
-			} else {
-			    int status;
-			    pid_t waitd = wait(&status);
+				vector<char *> c_comm = v_c_str(comm);
+				execvp(c_comm[0], &c_comm[0]);
+				perror(sys_errlist[errno]);
+				exit(errno);
 			}
+			int status;
+			pid_t waitd = wait(&status);
 		}
 	}	
 }
@@ -71,7 +74,7 @@ void meta_io(vector<string> commands) {
 		}
 		if (commands[i] == ">") {
 			if (i_out != -1) {
-    			printf("Too many >\n");
+				printf("Too many >\n");
 				return;
 			}
 			i_out = i;
@@ -94,7 +97,7 @@ void meta_io(vector<string> commands) {
 		commands.erase(it_out, it_out + 2);
 	}
 	pid_t pid = fork();
-    if (pid == 0) {
+	if (pid == 0) {
 		dup2(in, 0);
 		dup2(out, 1);
 		
@@ -117,54 +120,80 @@ void call(vector<string> commands) {
 	    if (pid == 0) {
 	        vector<char *> c_commands = v_c_str(commands);
 	        execvp(c_commands[0], &c_commands[0]);
-	    } else {
-	        int status;
-	        pid_t waitd = wait(&status);
-	    }   
+			perror(sys_errlist[errno]);
+			exit(errno);
+	    }
+		int status;
+	    pid_t waitd = wait(&status);   
 	}
 }
 
 void my_time(vector<string> commands) {
     commands.erase(commands.begin()); // удалить time
+	
+	struct timeval stop, start;
+	struct tms start_buffer, end_buffer;
 
-    time_t begin, end;
+    gettimeofday(&start, NULL);
 
-    begin = time(&begin);
+	pid_t pid = fork();    
+    if (pid == 0) {
+        vector<char *> c_commands = v_c_str(commands);
+        execvp(c_commands[0], &c_commands[0]);
+        perror(sys_errlist[errno]);
+        exit(errno);
+    }
 
-    call(commands);
+	int status;
+	signal(SIGINT, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	times(&start_buffer);
+	while(wait(&status) != pid)
+		times(&start_buffer);
+	times(&end_buffer);
 
-    time(&end);
-    printf("%lf\n", difftime(end, begin));
+	gettimeofday(&stop, NULL);
+
+	long int seconds = stop.tv_sec - start.tv_sec;
+	int microseconds = stop.tv_usec - start.tv_usec;
+	if (microseconds < 0) {
+		seconds-=1;
+		microseconds+=1000000;
+	}
+
+	printf("real: %ld.%06d s\n", seconds, microseconds);
+	printf("user: %ld s\n", end_buffer.tms_cutime - start_buffer.tms_cutime);
+	printf("system: %ld s\n", end_buffer.tms_cstime - start_buffer.tms_cstime);
 }
 
 void change_dir(vector<string> commands) {
-    if (commands.size() == 1) {
-        string user_name = string(getenv("USER"));
-        string cpp_path = "/Users/" + user_name;
-        char * path = (char *) cpp_path.c_str();
-        if (chdir(path) == -1) {
-            perror("chdir");
-        }
-    } else {
-        char * path = (char *) commands[1].c_str();
-        if (chdir(path) == -1) {
-            perror("chdir");
-        }
-    }
+	if (commands.size() == 1) {
+		string user_name = string(getenv("USER"));
+		string cpp_path = "/Users/" + user_name;
+		char * path = (char *) cpp_path.c_str();
+		if (chdir(path) == -1) {
+			perror("chdir");
+		}
+	} else {
+		char * path = (char *) commands[1].c_str();
+		if (chdir(path) == -1) {
+			perror("chdir");
+		}
+	}
 }
 
 void pwd(vector<string> commands) {
-    char path[100] = {0};
-    getcwd(path, 100);
-    int len = write(1, path, sizeof(path));
-    write(1, "\n", sizeof("\n"));;
+	char path[100] = {0};
+	getcwd(path, 100);
+	int len = write(1, path, sizeof(path));
+	write(1, "\n", sizeof("\n"));
 }
 
 void single(vector<string> commands) {
-	if (commands[0] == "time") 		{ my_time(commands); }
-	if (commands[0] == "cd") 		{ change_dir(commands); }
-	else if (commands[0] == "pwd") 	{ pwd(commands); }
-	else 							{ call(commands); }
+	if (commands[0] == "time")		{ my_time(commands); }
+	else if (commands[0] == "cd")	{ change_dir(commands); }
+	else if (commands[0] == "pwd")	{ pwd(commands); }
+	else							{ call(commands); }
 }
 
 void conveer_call(vector<string> commands) {
@@ -192,7 +221,7 @@ int conveer(vector<vector<string> > &commands) {
 		if (pid == 0) {
 			dup2(fd[current][0], 0); // ввод из предыдущего
 			dup2(fd[!current][1], 1); // вывод в следующий
-		    conveer_call(commands[i]);
+			conveer_call(commands[i]);
 		}
 		close(fd[current][0]); // закрыть ввод из предыдущего pipe
 		current = !current;
@@ -202,7 +231,7 @@ int conveer(vector<vector<string> > &commands) {
 	pid = fork();
 	if (pid == 0) {
 		int len = commands.size();
-    	dup2(fd[current][0], 0); // ввод из предыдущего, вывод стандартный
+		dup2(fd[current][0], 0); // ввод из предыдущего, вывод стандартный
 		conveer_call(commands[len - 1]); 
 	}
 	waitd = wait(&status);
