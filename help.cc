@@ -28,10 +28,15 @@ void baseline() {
 	char path[100];
 	getcwd(path, 100);
 	vector<string> dirs = split(string(path), '/');
-	char * cur_dir = (char *) dirs[dirs.size() - 1].c_str();
-	size_t uid= geteuid ();
+	string curdir;
+	if (dirs.size() == 0) {
+		curdir = "/";
+	} else {
+		curdir = dirs[dirs.size() - 1];
+	}
+	size_t uid = geteuid();
 	char is_su = uid ? '>' : '!';
-	printf("%s %s %c ", getenv("USER"), cur_dir, is_su);
+	printf("%s %s %c ", getenv("USER"), curdir.c_str(), is_su);
 }
 
 vector<string> input() {
@@ -152,7 +157,7 @@ int v_is_meta_io(vector<string> v) {
 void walk_recursive(string const &dirname, vector<string> &ret) {
 	DIR *dir = opendir(dirname.c_str());
 	if (dir == nullptr) {
-		perror(dirname.c_str());
+		// perror(dirname.c_str());
 		return;
 	}
 	for (dirent *de = readdir(dir); de != NULL; de = readdir(dir)) {
