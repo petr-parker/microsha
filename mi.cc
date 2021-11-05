@@ -11,7 +11,7 @@
 #include <fcntl.h>
 #include <sys/time.h>
 #include <algorithm>
-#include <signal.h>
+#include <sys/resource.h>
 #include <sys/times.h>
 
 using namespace std;
@@ -132,7 +132,7 @@ void my_time(vector<string> commands) {
     commands.erase(commands.begin()); // удалить time
 	
 	struct timeval stop, start;
-	struct tms start_buffer, end_buffer;
+	struct rusage ru;
 
     gettimeofday(&start, NULL);
 
@@ -145,13 +145,9 @@ void my_time(vector<string> commands) {
     }
 
 	int status;
-	signal(SIGINT, SIG_IGN);
-	signal(SIGQUIT, SIG_IGN);
-	times(&start_buffer);
-	while(wait(&status) != pid)
-		times(&start_buffer);
-	times(&end_buffer);
+	pid_t waitd = wait(&status);
 
+	getrusage(RUSAGE_CHILDREN, &ru);
 	gettimeofday(&stop, NULL);
 
 	long int seconds = stop.tv_sec - start.tv_sec;
@@ -162,8 +158,8 @@ void my_time(vector<string> commands) {
 	}
 
 	printf("real: %ld.%06d s\n", seconds, microseconds);
-	printf("user: %ld s\n", end_buffer.tms_cutime - start_buffer.tms_cutime);
-	printf("system: %ld s\n", end_buffer.tms_cstime - start_buffer.tms_cstime);
+	printf("user: %ld.%06d s\n", ru.ru_utime.tv_sec, ru.ru_utime.tv_usec);
+	printf("system: %ld.%06d s\n", ru.ru_stime.tv_sec, ru.ru_stime.tv_usec);
 }
 
 void change_dir(vector<string> commands) {
