@@ -26,28 +26,31 @@ void meta(vector<string> commands) {
 			break;
 		}
 	}
+
+	vector<string> v_meta = split(commands[i_meta], '/');
+	int depth = v_meta.size();
+
 	vector<string> all;
-	vector<string> comm = commands;
 	if (commands[i_meta][0] == '/') {
-		const char * base = "/";
-		all = walk(base);
+	    const char * base = "/";
+	    all = walk(base, depth);
 	} else {
-		const char * base = ".";
-		all = walk(base);
+	    const char * base = ".";
+	    all = walk(base, depth);
 	}
 	sort(all.begin(), all.end());
 
-	vector<string> v_meta;
 	vector<string> v;
 	string replace;
+	vector<string> comm = commands;
 	for (int i = 0; i < all.size(); i++) {
-		v_meta = split(commands[i_meta], '/');
 		v = split(all[i], '/');
 		if  (v[0] == ".") v.erase(v.begin());
 		if  (v_meta[0] == ".") v_meta.erase(v_meta.begin());
 		if (v_metacmp(v, v_meta)) {
 			replace = join(v, "/");
-			comm[i_meta] = replace; 
+			if (commands[i_meta][0] == '/') replace = "/" + replace;
+			comm[i_meta] = replace;
 			pid_t pid = fork();
 			if (pid == 0) {
 				vector<char *> c_comm = v_c_str(comm);
