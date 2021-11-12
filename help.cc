@@ -46,7 +46,11 @@ vector<string> input() {
 	char c = ' ';
 	baseline();
 	while (c != '\n') {
-		scanf("%c", &c);
+		if (scanf("%c", &c) == EOF) {
+			printf("Всё!\n");
+			ret.push_back("ENDOFWORK");
+			return ret;
+		}
 		while (c != ' ' && c != '\n') {
 			s = s + c;
 			scanf("%c", &c);

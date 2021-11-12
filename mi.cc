@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <sys/resource.h>
 #include <sys/times.h>
+#include <signal.h>
 
 using namespace std;
 
@@ -238,17 +239,23 @@ int conveer(vector<vector<string> > &commands) {
 	return status;
 }
 
+//void control_c(int val) { }
+
 int main() {
+	//signal(2, control_c);
+	
 	vector<string> in;
 	vector<vector<string> > com;
 	do {
 		in = input();
+		while (in.size() == 0) in = input();
+		if (in[0] == "ENDOFWORK") return 0;
 		com = split_in(in);
 		if (com.size() == 1) {
 			single(com[0]);
 		} else if (com.size() > 1) {
 			conveer(com);
 		}
-	} while (in.size() > 0);
+	} while (true);
 }
 
