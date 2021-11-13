@@ -14,6 +14,7 @@
 #include <sys/resource.h>
 #include <sys/times.h>
 #include <signal.h>
+#include <errno.h>
 
 using namespace std;
 
@@ -243,7 +244,7 @@ int conveer(vector<vector<string> > &commands) {
 
 int main() {
 	//signal(2, control_c);
-	
+	char * s = (char *)malloc(123);
 	vector<string> in;
 	vector<vector<string> > com;
 	do {
