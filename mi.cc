@@ -57,7 +57,7 @@ void meta(vector<string> commands) {
 			if (pid == 0) {
 				vector<char *> c_comm = v_c_str(comm);
 				execvp(c_comm[0], &c_comm[0]);
-				perror("microsha");
+				perror(c_comm[0]);
 				exit(errno);
 			}
 			int status;
@@ -108,7 +108,7 @@ void meta_io(vector<string> commands) {
 		
 		vector<char *> c_commands = v_c_str(commands);
 		execvp(c_commands[0], &c_commands[0]);
-		perror("microsha");
+		perror(c_commands[0]);
 		exit(errno);
 	}
 	int status;
@@ -125,7 +125,7 @@ void call(vector<string> commands) {
 	    if (pid == 0) {
 	        vector<char *> c_commands = v_c_str(commands);
 	        execvp(c_commands[0], &c_commands[0]);
-			perror("microsha");
+			perror(c_commands[0]);
 			exit(errno);
 	    }
 		int status;
@@ -145,7 +145,7 @@ void my_time(vector<string> commands) {
     if (pid == 0) {
         vector<char *> c_commands = v_c_str(commands);
         execvp(c_commands[0], &c_commands[0]);
-        perror("microsha");
+        perror(c_commands[0]);
         exit(errno);
     }
 
@@ -173,12 +173,12 @@ void change_dir(vector<string> commands) {
 		string cpp_path = "/Users/" + user_name;
 		char * path = (char *) cpp_path.c_str();
 		if (chdir(path) == -1) {
-			perror("microsha");
+			perror("cd");
 		}
 	} else {
 		char * path = (char *) commands[1].c_str();
 		if (chdir(path) == -1) {
-			perror("microsha");
+			perror(commands[0].c_str());
 		}
 	}
 }
